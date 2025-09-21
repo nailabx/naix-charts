@@ -1,1 +1,2 @@
 # naix-charts
+- Stateless charts
