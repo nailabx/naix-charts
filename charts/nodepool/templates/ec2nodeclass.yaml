@@ -4,7 +4,7 @@ kind: EC2NodeClass
 metadata:
   name: {{ .Values.node_group_name }}-ec2
 spec:
-  amiFamily: AmazonLinux2023
+  amiFamily: AL2023
   subnetSelectorTerms:
     - tags:
         "Name": "{{ .Values.subnet_prefix }}*"
