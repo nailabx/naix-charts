@@ -25,7 +25,7 @@ spec:
       nodeSelector:
         "deployment.group": {{ .Values.node_group_name }}
 
-      {{- if .Values.is_gpu_enabled }}
+      {{- if .Values.gpu.enabled }}
       tolerations:
         - key: nvidia.com/gpu
           operator: Exists
