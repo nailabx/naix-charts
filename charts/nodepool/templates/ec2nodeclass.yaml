@@ -10,7 +10,7 @@ spec:
         "Name": "{{ .Values.subnet_prefix }}*"
   securityGroupSelectorTerms:
     - tags:
-        Name: {{ .Values.cluster_name }}
+        Name: {{ .Values.cluster_name }}-node
   role: {{ .Values.role }}
   amiSelectorTerms:
     - alias: "al2023@v20250915"
