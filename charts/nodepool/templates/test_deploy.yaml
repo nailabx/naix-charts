@@ -1,3 +1,4 @@
+{{- if and (.Values.test_deploy_replicas) (gt (int .Values.test_deploy_replicas) 0) }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -44,3 +45,4 @@ spec:
             requests:
               cpu: 0.5
       {{- end }}
+{{- end }}
