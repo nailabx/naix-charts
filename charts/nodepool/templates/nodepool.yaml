@@ -1,0 +1,55 @@
+### 📄 `templates/nodepool.yaml`
+apiVersion: karpenter.sh/v1
+kind: NodePool
+metadata:
+  name: {{ .Values.node_group_name }}-np
+spec:
+  template:
+    metadata:
+      labels:
+        deployment.group: {{ .Values.node_group_name }}
+        nodepool: {{ .Values.node_group_name }}
+    spec:
+      nodeClassRef:
+        name: {{ .Values.node_group_name }}-ec2
+        kind: EC2NodeClass
+        group: karpenter.k8s.aws
+      requirements:
+        {{- range .Values.requirements }}
+        - key: {{ .key }}
+          operator: {{ .operator }}
+          values:
+            {{- range .values }}
+            - {{ . | quote }}
+            {{- end }}
+        {{- end }}
+      {{- if or .Values.is_gpu_enabled .Values.is_tainting_and_toleration_enabled }}
+      taints:
+        {{- if .Values.is_gpu_enabled }}
+        - key: nvidia.com/gpu
+          value: "dedicated"
+          effect: NoSchedule
+        {{- end }}
+        {{- range .Values.is_tainting_and_toleration_enabled.taints }}
+        - key: {{ .key | quote }}
+          {{- if .value }}
+          value: {{ .value | quote }}
+          {{- end }}
+          effect: {{ .effect | quote }}
+        {{- end }}
+      {{- end }}
+      expireAfter: {{ .Values.expireAfter | default "Never" }}
+  limits:
+    cpu: {{ .Values.limits.cpu | quote }}
+    memory: {{ .Values.limits.memory | quote }}
+  disruption:
+    consolidationPolicy: {{ .Values.consolidationPolicy | default "WhenEmptyOrUnderutilized" }}
+    consolidateAfter: {{ .Values.consolidateAfter | default "300s" }}
+    {{- if .Values.budgets }}
+    budgets:
+      {{- range .Values.budgets }}
+      - nodes: {{ .nodes | quote }}
+        schedule: {{ .schedule | quote }}
+        duration: {{ .duration | quote }}
+      {{- end }}
+    {{- end }}

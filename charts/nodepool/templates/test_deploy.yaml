@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deploy-test-knp-{{ .Values.node_group_name }}
+spec:
+  replicas: {{ .Values.test_deploy_replicas | default 0 }}
+  selector:
+    matchLabels:
+      app: {{ .Values.node_group_name }}-deploy-test-knp
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.node_group_name }}-deploy-test-knp
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - {{ .Values.node_group_name }}-deploy-test-knp
+            topologyKey: "kubernetes.io/hostname"
+      nodeSelector:
+        "deployment.group": {{ .Values.node_group_name }}
+
+      {{- if .Values.is_gpu_enabled }}
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Exists
+          effect: NoSchedule
+      containers:
+        - name: hello-app-runner
+          image: public.ecr.aws/aws-containers/hello-app-runner:latest
+          resources:
+            limits:
+              nvidia.com/gpu: 1
+      {{- else }}
+      containers:
+        - name: inflate
+          image: public.ecr.aws/eks-distro/kubernetes/pause:3.7
+          resources:
+            requests:
+              cpu: 0.5
+      {{- end }}

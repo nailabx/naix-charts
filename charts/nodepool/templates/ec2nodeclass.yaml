@@ -1,0 +1,54 @@
+### 📄 `templates/ec2nodeclass.yaml`
+apiVersion: karpenter.k8s.aws/v1
+kind: EC2NodeClass
+metadata:
+  name: {{ .Values.node_group_name }}-ec2
+spec:
+  amiFamily: AmazonLinux2023
+  subnetSelectorTerms:
+    - tags:
+        "Name": "{{ .Values.subnet_prefix }}*"
+  securityGroupSelectorTerms:
+    - tags:
+        karpenter.sh/discovery: {{ .Values.cluster_name }}
+  role: {{ .Values.role }}
+  amiSelectorTerms:
+    - alias: "al2023@v20250915"
+  userData: |
+    MIME-Version: 1.0
+    Content-Type: multipart/mixed; boundary="BOUNDARY"
+
+    --BOUNDARY
+    Content-Type: text/x-shellscript; charset="us-ascii"
+
+    #!/bin/bash
+    {{- if and .Values.platform (eq "ubuntu" .Values.platform) }}
+    echo "Running custom user data script for Ubuntu"
+    {{- else }}
+    echo "Running custom user data script for Amazon Linux"
+    yum install -y iptables-services
+    iptables --insert FORWARD 1 --in-interface eni+ --destination 169.254.169.254/32 --jump DROP
+    iptables-save | tee /etc/sysconfig/iptables
+    systemctl enable --now iptables
+    {{- end }}
+    echo never > /sys/kernel/mm/transparent_hugepage/enabled
+    echo never > /sys/kernel/mm/transparent_hugepage/defrag
+    --BOUNDARY--
+
+  tags:
+    karpenter.sh/discovery: {{ .Values.cluster_name }}
+    Name: "{{ .Values.cluster_name }}-{{ .Values.node_group_name }}"
+    {{- with .Values.tags }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- if .Values.blockDevices }}
+  blockDeviceMappings:
+    {{- toYaml .Values.blockDevices | nindent 4 }}
+  {{- else }}
+  blockDeviceMappings:
+    - deviceName: /dev/xvda
+      ebs:
+        volumeSize: {{ .Values.disk_size }}
+        volumeType: gp3
+        encrypted: true
+  {{- end }}
