@@ -5,8 +5,13 @@
 # cluster_name: naixtrade-eks
 # role: naixtrade-eks-node-role
 
-# # Optional GPU support (set to true if using GPU)
-# is_gpu_enabled: false
+# GPU Support
+gpu:
+  enabled: false
+
+taints:
+  enabled: false
+  taints: {}
 
 # # Storage
 # disk_size: 600Gi
@@ -48,3 +53,4 @@
 #   - nodes: "1"
 #     schedule: "* * * * *"
 #     duration: 24h
+

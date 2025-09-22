@@ -23,14 +23,14 @@ spec:
             - {{ . | quote }}
             {{- end }}
         {{- end }}
-      {{- if or .Values.is_gpu_enabled .Values.is_tainting_and_toleration_enabled }}
+      {{- if or .Values.gpu.enabled .Values.taints.enabled }}
       taints:
-        {{- if .Values.is_gpu_enabled }}
+        {{- if .Values.gpu.enabled }}
         - key: nvidia.com/gpu
           value: "dedicated"
           effect: NoSchedule
         {{- end }}
-        {{- range .Values.is_tainting_and_toleration_enabled.taints }}
+        {{- range .Values.taints.enabled | default list }}
         - key: {{ .key | quote }}
           {{- if .value }}
           value: {{ .value | quote }}
