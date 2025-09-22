@@ -1,50 +1,50 @@
-# Required
-node_group_name: node-test
-subnet_prefix: naixtrade-eks-private
-# ami_id: ami-00923df3a0d188147
-cluster_name: naixtrade-eks
-role: naixtrade-eks-node-role
+# # Required
+# node_group_name: node-test
+# subnet_prefix: naixtrade-eks-private
+# # ami_id: ami-00923df3a0d188147
+# cluster_name: naixtrade-eks
+# role: naixtrade-eks-node-role
 
-# Optional GPU support (set to true if using GPU)
-is_gpu_enabled: false
+# # Optional GPU support (set to true if using GPU)
+# is_gpu_enabled: false
 
-# Storage
-disk_size: 600Gi
+# # Storage
+# disk_size: 600Gi
 
-# Limits for Karpenter NodePool (not the test pod)
-limits:
-  cpu: "20000m"
-  memory: "5000Gi"
+# # Limits for Karpenter NodePool (not the test pod)
+# limits:
+#   cpu: "20000m"
+#   memory: "5000Gi"
 
-# Node Tags
-tags: 
-  AssetAreaName: "karpenter managed sK8s node"
-  System: "Standardized Kubernetes Platform"
-  Purpose: "Node Flip Test Group - Blue"
+# # Node Tags
+# tags: 
+#   AssetAreaName: "karpenter managed sK8s node"
+#   System: "Standardized Kubernetes Platform"
+#   Purpose: "Node Flip Test Group - Blue"
 
-# Karpenter requirements (filter instance types, arch, etc)
-requirements:
-  - key: "node.kubernetes.io/instance-type"
-    operator: In
-    values: ["r6i.2xlarge", "r5.2xlarge", "r6i.xlarge"]
-  - key: "karpenter.sh/capacity-type" 
-    operator: In
-    values: ["on-demand"]
-  - key: "kubernetes.io/arch"
-    operator: In
-    values: ["amd64"]
-  - key: "kubernetes.io/os"
-    operator: In
-    values: ["linux"]
+# # Karpenter requirements (filter instance types, arch, etc)
+# requirements:
+#   - key: "node.kubernetes.io/instance-type"
+#     operator: In
+#     values: ["r6i.2xlarge", "r5.2xlarge", "r6i.xlarge"]
+#   - key: "karpenter.sh/capacity-type" 
+#     operator: In
+#     values: ["on-demand"]
+#   - key: "kubernetes.io/arch"
+#     operator: In
+#     values: ["amd64"]
+#   - key: "kubernetes.io/os"
+#     operator: In
+#     values: ["linux"]
 
-# Test deployment (optional)
-test_deploy_replicas: 0
+# # Test deployment (optional)
+# test_deploy_replicas: 0
 
-# NodePool expiration / scaling
-expireAfter: "600s"
-consolidationPolicy: "WhenUnderutilized"
+# # NodePool expiration / scaling
+# expireAfter: "600s"
+# consolidationPolicy: "WhenUnderutilized"
 
-budgets:
-  - nodes: "1"
-    schedule: "* * * * *"
-    duration: 24h
+# budgets:
+#   - nodes: "1"
+#     schedule: "* * * * *"
+#     duration: 24h
