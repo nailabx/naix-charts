@@ -3,6 +3,16 @@ entries:
   nodepool:
   - apiVersion: v2
     appVersion: 1.16.0
+    created: "2025-09-22T23:20:54.046643575Z"
+    description: A Helm chart for Kubernetes
+    digest: 82f4263ab815ddd41ee3d26b61aa1112e513862bae09386f0335fa4d478ce677
+    name: nodepool
+    type: application
+    urls:
+    - https://github.com/nailabx/naix-charts/releases/download/nodepool-0.1.8/nodepool-0.1.8.tgz
+    version: 0.1.8
+  - apiVersion: v2
+    appVersion: 1.16.0
     created: "2025-09-22T23:05:46.389538024Z"
     description: A Helm chart for Kubernetes
     digest: 812d5a3361f8940945070ff5f136bc22aa065cced947dc94e18082d2e4dc74ea
@@ -102,4 +112,4 @@ entries:
     urls:
     - https://nailabx.github.io/naix-charts/stateless-0.1.0.tgz
     version: 0.1.0
-generated: "2025-09-22T23:05:46.389568141Z"
+generated: "2025-09-22T23:20:54.046684132Z"
