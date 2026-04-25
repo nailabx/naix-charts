@@ -92,6 +92,40 @@ entries:
     - https://github.com/nailabx/naix-charts/releases/download/nodepool-0.1.0/nodepool-0.1.0.tgz
     version: 0.1.0
   stateless:
+  - annotations:
+      artifacthub.io/category: integration-delivery
+      artifacthub.io/license: MIT
+    apiVersion: v2
+    appVersion: 1.0.0
+    created: "2026-04-25T11:18:24.448407729Z"
+    description: 'Universal Helm chart for stateless Kubernetes workloads. Renders
+      one or more containers with optional feature blocks for routing (k8s Ingress,
+      Gateway API HTTPRoute, APIsix per-route plugins), config (ConfigMap), secrets
+      (External Secrets Operator), autoscaling (HPA or KEDA), resilience (PodDisruptionBudget,
+      NetworkPolicy), and observability (Prometheus Operator PodMonitor / ServiceMonitor).
+      Every feature block is opt-in (`enabled: false` default), so the chart works
+      equally well for a one-liner nginx deployment or a fully-wired microservice
+      behind a shared gateway. '
+    digest: 4a6df0de4f5a45da4bf53ed8f26c860a699fbccf874fd5eac4909301d30267b6
+    home: https://github.com/nailabx/naix-charts
+    keywords:
+    - microservice
+    - stateless
+    - apisix
+    - gateway-api
+    - external-secrets
+    - keda
+    kubeVersion: '>=1.27.0'
+    maintainers:
+    - name: Nailabx
+      url: https://github.com/nailabx
+    name: stateless
+    sources:
+    - https://github.com/nailabx/naix-charts
+    type: application
+    urls:
+    - https://github.com/nailabx/naix-charts/releases/download/stateless-1.0.0/stateless-1.0.0.tgz
+    version: 1.0.0
   - apiVersion: v2
     appVersion: 1.16.0
     created: "2025-09-22T05:16:06.328769447Z"
@@ -112,4 +146,4 @@ entries:
     urls:
     - https://nailabx.github.io/naix-charts/stateless-0.1.0.tgz
     version: 0.1.0
-generated: "2025-09-22T23:20:54.046684132Z"
+generated: "2026-04-25T11:18:24.448437495Z"
