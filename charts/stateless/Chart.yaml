@@ -14,15 +14,18 @@ description: |
 type: application
 
 # Chart version. Bump on every change. Major bump on breaking values changes.
-version: 1.0.0
+version: 1.0.1
 
 # AppVersion is overridable per-release via image.tag — leaving as a sane
 # baseline for charts deployed without an explicit tag.
 appVersion: "1.0.0"
 
-# Minimum Helm version. 3.14 has stable behavior for subdirectory templates,
-# `lookup` functions, and our heavier conditional rendering.
-kubeVersion: ">=1.27.0"
+# Minimum Kubernetes version. The `-0` suffix on the lower bound is
+# intentional: it tells Helm's semver constraint to accept versions with
+# pre-release suffixes too (e.g. EKS reports cluster versions as
+# `1.35.3-eks-bbe087e`, which without `-0` would fail the constraint
+# because Helm orders pre-releases below their release counterparts).
+kubeVersion: ">=1.27.0-0"
 
 home: https://github.com/nailabx/naix-charts
 sources:
