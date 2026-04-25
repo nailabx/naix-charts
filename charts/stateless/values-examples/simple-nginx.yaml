@@ -1,0 +1,10 @@
+# Smallest possible deployment: one container, no networking integrations.
+# Useful as a sanity check or for backend-only workloads accessed via port-forward.
+
+containers:
+  app:
+    image:
+      repository: nginx
+      tag: "1.25"
+    ports:
+      - { name: http, containerPort: 80 }

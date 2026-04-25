@@ -1,0 +1,40 @@
+# Worker that scales to zero off-hours via KEDA cron trigger.
+# No service, no ingress — purely event-driven background work.
+
+containers:
+  app:
+    image:
+      repository: ghcr.io/your-org/your-worker
+      tag: "0.5.0"
+    env:
+      - { name: WORK_QUEUE, value: scrape-jobs }
+      - { name: LOG_LEVEL, value: info }
+    resources:
+      requests: { cpu: 200m, memory: 256Mi }
+
+# No service needed — purely outbound work
+service:
+  enabled: false
+
+# Scale to zero off-hours
+scaledObject:
+  enabled: true
+  minReplicas: 0
+  maxReplicas: 5
+  pollingInterval: 60
+  cooldownPeriod: 300
+  triggers:
+    # Active 04:00-20:00 ET, Mon-Fri
+    - type: cron
+      metadata:
+        timezone: America/New_York
+        start: "0 4 * * 1-5"
+        end:   "0 20 * * 1-5"
+        desiredReplicas: "1"
+    # Scale up further when SQS depth grows
+    - type: aws-sqs-queue
+      metadata:
+        queueURL: https://sqs.us-east-1.amazonaws.com/123456789012/scrape-jobs
+        queueLength: "10"
+        awsRegion: us-east-1
+        identityOwner: pod

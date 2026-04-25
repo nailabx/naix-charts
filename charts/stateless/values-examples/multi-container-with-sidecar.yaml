@@ -1,0 +1,60 @@
+# App with an OpenTelemetry collector sidecar. App writes traces over
+# OTLP to localhost:4317; collector forwards them to the central
+# observability backend.
+
+containers:
+  app:
+    image:
+      repository: ghcr.io/your-org/your-svc
+      tag: "1.0.0"
+    ports:
+      - { name: http, containerPort: 8080 }
+    env:
+      - { name: OTEL_EXPORTER_OTLP_ENDPOINT, value: "http://localhost:4317" }
+      - { name: OTEL_SERVICE_NAME, value: your-svc }
+    resources:
+      requests: { cpu: 100m, memory: 128Mi }
+
+  otel-collector:
+    image:
+      repository: otel/opentelemetry-collector-contrib
+      tag: "0.110.0"
+    args: ["--config=/etc/otel/config.yaml"]
+    ports:
+      - { name: otlp-grpc, containerPort: 4317 }
+      - { name: otlp-http, containerPort: 4318 }
+    volumeMounts:
+      - { name: otel-config, mountPath: /etc/otel }
+    resources:
+      requests: { cpu: 50m, memory: 64Mi }
+
+# OTel config provided as a ConfigMap mounted into the collector
+configMap:
+  enabled: true
+  mountAsEnv: false
+  mountAsFiles:
+    enabled: false   # we'll mount via volumes instead
+  data:
+    config.yaml: |
+      receivers:
+        otlp:
+          protocols:
+            grpc: { endpoint: 0.0.0.0:4317 }
+            http: { endpoint: 0.0.0.0:4318 }
+      exporters:
+        otlphttp:
+          endpoint: https://tempo.example.com/otlp
+      service:
+        pipelines:
+          traces: { receivers: [otlp], exporters: [otlphttp] }
+
+volumes:
+  - name: otel-config
+    configMap:
+      name: <release-name>-stateless-config   # matches stateless.configMapName
+
+service:
+  enabled: true
+  ports:
+    - { name: http,      port: 80,   targetPort: http,      protocol: TCP }
+    - { name: otlp-grpc, port: 4317, targetPort: otlp-grpc, protocol: TCP }

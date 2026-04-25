@@ -1,0 +1,15 @@
+{{- if and .Values.gatewayApi.enabled .Values.gatewayApi.referenceGrant.enabled }}
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: {{ include "stateless.fullname" . }}
+  labels:
+    {{- include "stateless.labels" . | nindent 4 }}
+spec:
+  from:
+    {{- toYaml .Values.gatewayApi.referenceGrant.from | nindent 4 }}
+  to:
+    - group: ""
+      kind: Service
+      name: {{ include "stateless.fullname" . }}
+{{- end }}

@@ -1,22 +1,43 @@
-1. Get the application URL by running these commands:
-{{- if .Values.ingress.enabled }}
+{{ include "stateless.fullname" . }} deployed in {{ .Release.Namespace }}.
+
+{{- if .Values.gatewayApi.enabled }}
+
+Gateway API HTTPRoute is configured. Reachable at:
+{{- range .Values.gatewayApi.hostnames }}
+  https://{{ . }}
+{{- end }}
+{{- if .Values.apisix.enabled }}
+APIsix per-route plugins enabled: {{ keys .Values.apisix.pluginConfig.plugins | join ", " }}
+{{- end }}
+
+{{- else if .Values.ingress.enabled }}
+
+Ingress configured. Reachable at:
 {{- range $host := .Values.ingress.hosts }}
-  {{- range .paths }}
+{{- range .paths }}
   http{{ if $.Values.ingress.tls }}s{{ end }}://{{ $host.host }}{{ .path }}
-  {{- end }}
 {{- end }}
-{{- else if contains "NodePort" .Values.service.type }}
-  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "stateless.fullname" . }})
-  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
-  echo http://$NODE_IP:$NODE_PORT
-{{- else if contains "LoadBalancer" .Values.service.type }}
-     NOTE: It may take a few minutes for the LoadBalancer IP to be available.
-           You can watch its status by running 'kubectl get --namespace {{ .Release.Namespace }} svc -w {{ include "stateless.fullname" . }}'
-  export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "stateless.fullname" . }} --template "{{"{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}"}}")
-  echo http://$SERVICE_IP:{{ .Values.service.port }}
-{{- else if contains "ClusterIP" .Values.service.type }}
-  export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "stateless.name" . }},app.kubernetes.io/instance={{ .Release.Name }}" -o jsonpath="{.items[0].metadata.name}")
-  export CONTAINER_PORT=$(kubectl get pod --namespace {{ .Release.Namespace }} $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
-  echo "Visit http://127.0.0.1:8080 to use your application"
-  kubectl --namespace {{ .Release.Namespace }} port-forward $POD_NAME 8080:$CONTAINER_PORT
 {{- end }}
+
+{{- else if .Values.service.enabled }}
+
+Service is internal-only ({{ .Values.service.type }}). To reach it from outside the cluster:
+  kubectl --namespace {{ .Release.Namespace }} port-forward svc/{{ include "stateless.fullname" . }} 8080:{{ (index .Values.service.ports 0).port }}
+
+Then visit http://localhost:8080
+{{- end }}
+
+{{- if .Values.externalSecret.enabled }}
+
+External secrets sync into K8s Secret '{{ include "stateless.externalSecretName" . }}' from
+'{{ .Values.externalSecret.storeRef.name }}'. Wait ~30s for first sync. Verify with:
+  kubectl --namespace {{ .Release.Namespace }} get externalsecret {{ include "stateless.externalSecretName" . }}
+{{- end }}
+
+{{- if or .Values.podMonitor.enabled .Values.serviceMonitor.enabled }}
+
+Prometheus is scraping this workload (interval={{ .Values.podMonitor.interval | default .Values.serviceMonitor.interval }}).
+{{- end }}
+
+Status:
+  kubectl --namespace {{ .Release.Namespace }} get pods,svc,httproute -l app.kubernetes.io/instance={{ .Release.Name }}

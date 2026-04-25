@@ -1,0 +1,87 @@
+# Microservice behind APIsix Gateway API + Firebase OIDC + ESO secrets.
+# Pattern for backend services in a Nailabx-style cluster.
+
+containers:
+  app:
+    image:
+      repository: registry.gitlab.com/your-org/your-svc
+      tag: "1.0.0"
+    ports:
+      - { name: http,    containerPort: 8080 }
+      - { name: metrics, containerPort: 9090 }
+    env:
+      - { name: LOG_LEVEL,   value: info }
+      - { name: ENVIRONMENT, value: dev }
+    livenessProbe:
+      httpGet: { path: /healthz, port: http }
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    readinessProbe:
+      httpGet: { path: /readyz, port: http }
+      initialDelaySeconds: 2
+      periodSeconds: 5
+    resources:
+      requests: { cpu: 100m, memory: 128Mi }
+      limits:   { memory: 256Mi }
+
+replicaCount: 2
+
+nodeSelector:
+  role: services
+tolerations:
+  - { key: role, operator: Equal, value: services, effect: NoSchedule }
+
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/your-svc
+
+# Backend (envFrom auto-mounts the synced ESO Secret as env)
+externalSecret:
+  enabled: true
+  storeRef:
+    name: aws-secrets-manager
+    kind: ClusterSecretStore
+  data:
+    - { secretKey: STRIPE_API_KEY, remoteRef: { key: your-org/dev/stripe, property: api_key } }
+    - { secretKey: RESEND_API_KEY, remoteRef: { key: your-org/dev/resend, property: api_key } }
+
+# Routing — APIsix gateway with Firebase OIDC
+gatewayApi:
+  enabled: true
+  parentRefs:
+    - { name: platform, namespace: gateway, sectionName: http }
+  hostnames: [accounts.platform.example.com]
+  rules:
+    - matches:
+        - path: { type: PathPrefix, value: /api/v1 }
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: your-svc-plugins   # references PluginConfig below
+      backendRefs:
+        - { name: your-svc, port: 80 }
+
+apisix:
+  enabled: true
+  pluginConfig:
+    plugins:
+      openid-connect:
+        discovery: https://securetoken.google.com/your-project/.well-known/openid-configuration
+        bearer_only: true
+        set_userinfo_header: true
+        token_signing_alg_values_expected: RS256
+      cors:
+        allow_origins: https://your-frontend.example.com
+
+# Resilience + observability
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+podMonitor:
+  enabled: true
+  port: metrics
+  path: /metrics
+  interval: 30s

@@ -1,0 +1,42 @@
+name: PR Validate
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  lint-and-render:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.14.4
+
+      - name: Set up chart-testing
+        uses: helm/chart-testing-action@v2.6.1
+
+      - name: Lint
+        run: ct lint --target-branch main
+
+      - name: Render every example values file
+        run: |
+          set -e
+          for chart in charts/*/; do
+            chart_name=$(basename "$chart")
+            echo "── Linting $chart_name ──"
+            helm lint "$chart"
+            if [ -d "$chart/values-examples" ]; then
+              for example in "$chart"/values-examples/*.yaml; do
+                example_name=$(basename "$example")
+                echo "── Rendering $chart_name with $example_name ──"
+                helm template smoke "$chart" -f "$example" > /dev/null
+              done
+            fi
+          done

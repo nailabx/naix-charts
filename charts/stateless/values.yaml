@@ -1,123 +1,265 @@
-# Default values for stateless.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
+# ════════════════════════════════════════════════════════════════════
+# stateless — Helm chart values
+#
+# Minimum to deploy: a single image under `containers.app.image`.
+# Everything else is opt-in via `<feature>.enabled: true`.
+#
+# All feature blocks are universal (vanilla Kubernetes resources)
+# except `apisix:` which renders APIsix-specific PluginConfig CRDs.
+# ════════════════════════════════════════════════════════════════════
 
-# This will set the replicaset count more information can be found here: https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/
-replicaCount: 1
-
-# This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
-image:
-  repository: nginx
-  # This sets the pull policy for images.
-  pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
-  tag: ""
-
-# This is for the secrets for pulling an image from a private repository more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
-imagePullSecrets: []
-# This is to override the chart name.
+# ── Identity overrides ─────────────────────────────────────────────
+# By default resources are named `<release-name>-<chart-name>`.
 nameOverride: ""
 fullnameOverride: ""
 
-# This section builds out the service account more information can be found here: https://kubernetes.io/docs/concepts/security/service-accounts/
-serviceAccount:
-  # Specifies whether a service account should be created
-  create: true
-  # Automatically mount a ServiceAccount's API credentials?
-  automount: true
-  # Annotations to add to the service account
-  annotations: {}
-  # The name of the service account to use.
-  # If not set and create is true, a name is generated using the fullname template
-  name: ""
+# ── Containers ─────────────────────────────────────────────────────
+# Map of named containers. The first key (alphabetically) is treated
+# as primary for service-port resolution. Add more keys for sidecars.
+#
+# Minimum required:
+#   containers:
+#     app:
+#       image:
+#         repository: nginx
+#         tag: "1.25"
+containers:
+  app:
+    image:
+      repository: nginx
+      tag: ""                # defaults to .Chart.AppVersion if empty
+      pullPolicy: IfNotPresent
+    # Named ports — referenced by name in service.ports[].targetPort
+    ports:
+      - name: http
+        containerPort: 80
+        protocol: TCP
+    # Inline env vars (literal values only — for secrets use externalSecret)
+    env: []
+    # Extra envFrom directives. Auto-populated for ConfigMap + ExternalSecret
+    # if those features are enabled and `mountAsEnv: true` (default).
+    extraEnvFrom: []
+    resources: {}
+    livenessProbe: {}
+    readinessProbe: {}
+    startupProbe: {}
+    securityContext: {}
+    volumeMounts: []
+    command: []
+    args: []
+    lifecycle: {}
 
-# This is for setting Kubernetes Annotations to a Pod.
-# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+  # Example sidecar — uncomment to enable:
+  # otel-collector:
+  #   image:
+  #     repository: otel/opentelemetry-collector-contrib
+  #     tag: "0.110.0"
+  #   ports:
+  #     - { name: otlp-grpc, containerPort: 4317 }
+  #   args: ["--config=/etc/otel/config.yaml"]
+  #   volumeMounts:
+  #     - { name: otel-config, mountPath: /etc/otel }
+
+# Init containers — array, order matters (run sequentially before main)
+initContainers: []
+
+# Image pull secrets for private registries
+imagePullSecrets: []
+
+# ── Pod ─────────────────────────────────────────────────────────────
+replicaCount: 1
 podAnnotations: {}
-# This is for setting Kubernetes Labels to a Pod.
-# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
 podLabels: {}
-
 podSecurityContext: {}
-  # fsGroup: 2000
+nodeSelector: {}
+tolerations: []
+affinity: {}
+volumes: []
+terminationGracePeriodSeconds: 30
+topologySpreadConstraints: []
+hostNetwork: false
+hostPID: false
+dnsPolicy: ""
+priorityClassName: ""
 
-securityContext: {}
-  # capabilities:
-  #   drop:
-  #   - ALL
-  # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-  # runAsUser: 1000
+# ── ServiceAccount ──────────────────────────────────────────────────
+serviceAccount:
+  create: true
+  name: ""                   # defaults to fullname
+  automount: true
+  # IRSA on EKS: put `eks.amazonaws.com/role-arn: arn:aws:iam::...:role/...`
+  # GKE Workload Identity: `iam.gke.io/gcp-service-account: ...`
+  # Azure Workload Identity: `azure.workload.identity/client-id: ...`
+  annotations: {}
 
-# This is for setting up a service more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/
+# ── Service (k8s native) ────────────────────────────────────────────
 service:
-  # This sets the service type more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
-  type: ClusterIP
-  # This sets the ports more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#field-spec-ports
-  port: 80
+  enabled: true
+  type: ClusterIP            # ClusterIP | NodePort | LoadBalancer | ExternalName
+  ports:
+    - name: http
+      port: 80
+      targetPort: http       # name-based; resolves across all containers
+      protocol: TCP
+      # nodePort: 30080      # only if type: NodePort
+  annotations: {}
+  externalTrafficPolicy: ""
+  sessionAffinity: ""
 
-# This block is for setting up the ingress for more information can be found here: https://kubernetes.io/docs/concepts/services-networking/ingress/
+# ════════════════════════════════════════════════════════════════════
+# ── Routing — pick zero, one, or more
+# ════════════════════════════════════════════════════════════════════
+
+# Option A: k8s Ingress (legacy, still common in non-Gateway-API clusters)
 ingress:
   enabled: false
   className: ""
   annotations: {}
-    # kubernetes.io/ingress.class: nginx
-    # kubernetes.io/tls-acme: "true"
-  hosts:
-    - host: chart-example.local
-      paths:
-        - path: /
-          pathType: ImplementationSpecific
-  tls: []
-  #  - secretName: chart-example-tls
-  #    hosts:
-  #      - chart-example.local
+  hosts: []                  # [{host: example.com, paths: [{path: /, pathType: Prefix}]}]
+  tls: []                    # [{hosts: [...], secretName: ...}]
 
-resources: {}
-  # We usually recommend not to specify default resources and to leave this as a conscious
-  # choice for the user. This also increases chances charts run on environments with little
-  # resources, such as Minikube. If you do want to specify resources, uncomment the following
-  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-  # limits:
-  #   cpu: 100m
-  #   memory: 128Mi
-  # requests:
-  #   cpu: 100m
-  #   memory: 128Mi
+# Option B: Gateway API HTTPRoute (universal — works with any Gateway API impl:
+# APIsix, Envoy Gateway, Istio, NGINX Gateway Fabric, Kong, Cilium, etc.)
+gatewayApi:
+  enabled: false
+  parentRefs: []             # [{name: my-gateway, namespace: gateway, sectionName: http}]
+  hostnames: []              # [api.example.com]
+  rules: []                  # full HTTPRoute rule structure (matches/filters/backendRefs)
+  # ReferenceGrant — required when HTTPRoute parent or backendRef crosses namespace
+  referenceGrant:
+    enabled: false
+    from: []                 # [{group, kind, namespace}]
 
-# This is to setup the liveness and readiness probes more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
-livenessProbe:
-  httpGet:
-    path: /
-    port: http
-readinessProbe:
-  httpGet:
-    path: /
-    port: http
+# Option C: APIsix-specific per-route plugins (apisix.apache.org/v1alpha1 PluginConfig)
+# Only meaningful when your Gateway API implementation IS APIsix.
+apisix:
+  enabled: false
+  pluginConfig:
+    plugins: {}              # { "openid-connect": {...}, "ai-rate-limiting": {...} }
 
-# This section is for setting up autoscaling more information can be found here: https://kubernetes.io/docs/concepts/workloads/autoscaling/
-autoscaling:
+# ════════════════════════════════════════════════════════════════════
+# ── Config + Secrets
+# ════════════════════════════════════════════════════════════════════
+
+# ConfigMap (non-secret config)
+configMap:
+  enabled: false
+  data: {}                   # { CONFIG_KEY: value }
+  binaryData: {}
+  # When true, every container envFrom: configMapRef gets the rendered map.
+  mountAsEnv: true
+  # Mount as files instead of/in addition to env:
+  mountAsFiles:
+    enabled: false
+    mountPath: /etc/config
+    items: []                # [{key: foo.yaml, path: foo.yaml}]; empty = all keys
+
+# External Secrets Operator (works with AWS Secrets Manager, GCP Secret Manager,
+# Vault, Azure Key Vault, etc. — depends on installed ClusterSecretStore)
+externalSecret:
+  enabled: false
+  storeRef:
+    name: ""                 # ClusterSecretStore name
+    kind: ClusterSecretStore # or SecretStore
+  refreshInterval: 1h
+  target:
+    creationPolicy: Owner
+  # Pull individual keys from a remote secret. The synced K8s Secret
+  # gets one entry per `secretKey` listed here.
+  data: []                   # [{secretKey: API_KEY, remoteRef: {key: my/secret, property: api_key}}]
+  # Pull every key from a remote secret as one batch (alternative to `data:`)
+  dataFrom: []               # [{extract: {key: my/secret}}]
+  mountAsEnv: true
+
+# Bring-your-own existing K8s Secrets (skip ESO sync)
+existingSecrets: []          # [secret-name-1, secret-name-2] — envFrom each
+existingConfigMaps: []       # [configmap-name-1] — envFrom each
+
+# ════════════════════════════════════════════════════════════════════
+# ── Autoscaling — pick zero or one
+# ════════════════════════════════════════════════════════════════════
+
+# Horizontal Pod Autoscaler (CPU/memory + custom metrics)
+hpa:
   enabled: false
   minReplicas: 1
-  maxReplicas: 100
+  maxReplicas: 10
+  metrics: []                # full HPA v2 metric spec; or use the shorthands below
+  # Shorthands (combined into metrics if `metrics: []`):
   targetCPUUtilizationPercentage: 80
-  # targetMemoryUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 0   # 0 = disabled
+  behavior: {}               # advanced: scaleUp/scaleDown stabilization windows
 
-# Additional volumes on the output Deployment definition.
-volumes: []
-# - name: foo
-#   secret:
-#     secretName: mysecret
-#     optional: false
+# KEDA ScaledObject — event-driven, supports scale-to-zero
+scaledObject:
+  enabled: false
+  minReplicas: 0             # KEDA can scale to zero (HPA can't)
+  maxReplicas: 10
+  pollingInterval: 30
+  cooldownPeriod: 300
+  triggers: []               # full KEDA trigger array (cron, kafka, prometheus, …)
+  fallback: {}               # {failureThreshold: 3, replicas: 1}
 
-# Additional volumeMounts on the output Deployment definition.
-volumeMounts: []
-# - name: foo
-#   mountPath: "/etc/foo"
-#   readOnly: true
+# ════════════════════════════════════════════════════════════════════
+# ── Resilience
+# ════════════════════════════════════════════════════════════════════
 
-nodeSelector: {}
+podDisruptionBudget:
+  enabled: false
+  minAvailable: 1            # OR set maxUnavailable
+  # maxUnavailable: 1
+  unhealthyPodEvictionPolicy: ""  # IfHealthyBudget | AlwaysAllow
 
-tolerations: []
+# ════════════════════════════════════════════════════════════════════
+# ── Observability — pick zero, one, or both
+# ════════════════════════════════════════════════════════════════════
 
-affinity: {}
+podMonitor:                  # Prometheus Operator
+  enabled: false
+  port: metrics              # named container port
+  path: /metrics
+  interval: 30s
+  scrapeTimeout: 10s
+  labels: {}
+  relabelings: []
+  metricRelabelings: []
+
+serviceMonitor:              # Prometheus Operator (Service-based)
+  enabled: false
+  port: metrics              # named service port
+  path: /metrics
+  interval: 30s
+  scrapeTimeout: 10s
+  labels: {}
+  relabelings: []
+  metricRelabelings: []
+
+# ════════════════════════════════════════════════════════════════════
+# ── Network Policy — universal Kubernetes
+# ════════════════════════════════════════════════════════════════════
+
+networkPolicy:
+  enabled: false
+  # Default: deny all unless rules listed below
+  # ingress / egress are full NetworkPolicy{Ingress,Egress}Rule arrays
+  ingress: []                # [{from: [{namespaceSelector: {...}, podSelector: {...}}], ports: [...]}]
+  egress: []
+  policyTypes:               # which directions to enforce
+    - Ingress
+    # - Egress
+
+# ════════════════════════════════════════════════════════════════════
+# ── Deprecated — kept for back-compat with chart v0.x consumers
+# ════════════════════════════════════════════════════════════════════
+
+# These root-level keys are NO LONGER USED but remain documented so
+# upgrades don't silently drop config. Migrate to the equivalents above:
+#   image.*           → containers.app.image.*
+#   resources         → containers.app.resources
+#   livenessProbe     → containers.app.livenessProbe
+#   readinessProbe    → containers.app.readinessProbe
+#   volumeMounts      → containers.app.volumeMounts
+#   securityContext   → containers.app.securityContext
+#   autoscaling       → hpa
+#
+# A future v2.x will fail fast on these old keys; v1.x is silent.

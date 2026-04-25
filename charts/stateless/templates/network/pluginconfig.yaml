@@ -1,0 +1,16 @@
+{{- if and .Values.apisix.enabled .Values.apisix.pluginConfig.plugins }}
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  name: {{ include "stateless.pluginConfigName" . }}
+  labels:
+    {{- include "stateless.labels" . | nindent 4 }}
+spec:
+  plugins:
+    {{- range $pluginName, $pluginConfig := .Values.apisix.pluginConfig.plugins }}
+    - name: {{ $pluginName }}
+      enable: true
+      config:
+        {{- toYaml $pluginConfig | nindent 8 }}
+    {{- end }}
+{{- end }}

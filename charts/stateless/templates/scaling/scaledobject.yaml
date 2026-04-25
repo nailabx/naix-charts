@@ -1,0 +1,23 @@
+{{- if .Values.scaledObject.enabled }}
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: {{ include "stateless.fullname" . }}
+  labels:
+    {{- include "stateless.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "stateless.fullname" . }}
+  minReplicaCount: {{ .Values.scaledObject.minReplicas }}
+  maxReplicaCount: {{ .Values.scaledObject.maxReplicas }}
+  pollingInterval: {{ .Values.scaledObject.pollingInterval }}
+  cooldownPeriod: {{ .Values.scaledObject.cooldownPeriod }}
+  {{- with .Values.scaledObject.fallback }}
+  fallback:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  triggers:
+    {{- toYaml .Values.scaledObject.triggers | nindent 4 }}
+{{- end }}
