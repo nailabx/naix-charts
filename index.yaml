@@ -97,6 +97,40 @@ entries:
       artifacthub.io/license: MIT
     apiVersion: v2
     appVersion: 1.0.0
+    created: "2026-04-30T21:03:41.074939848Z"
+    description: 'Universal Helm chart for stateless Kubernetes workloads. Renders
+      one or more containers with optional feature blocks for routing (k8s Ingress,
+      Gateway API HTTPRoute, APIsix per-route plugins), config (ConfigMap), secrets
+      (External Secrets Operator), autoscaling (HPA or KEDA), resilience (PodDisruptionBudget,
+      NetworkPolicy), and observability (Prometheus Operator PodMonitor / ServiceMonitor).
+      Every feature block is opt-in (`enabled: false` default), so the chart works
+      equally well for a one-liner nginx deployment or a fully-wired microservice
+      behind a shared gateway. '
+    digest: 17579b25d2f09be48b528b12b4b0da129ce58e89b42e2979fe177043a8445330
+    home: https://github.com/nailabx/naix-charts
+    keywords:
+    - microservice
+    - stateless
+    - apisix
+    - gateway-api
+    - external-secrets
+    - keda
+    kubeVersion: '>=1.27.0-0'
+    maintainers:
+    - name: Nailabx
+      url: https://github.com/nailabx
+    name: stateless
+    sources:
+    - https://github.com/nailabx/naix-charts
+    type: application
+    urls:
+    - https://github.com/nailabx/naix-charts/releases/download/stateless-1.1.1/stateless-1.1.1.tgz
+    version: 1.1.1
+  - annotations:
+      artifacthub.io/category: integration-delivery
+      artifacthub.io/license: MIT
+    apiVersion: v2
+    appVersion: 1.0.0
     created: "2026-04-30T20:59:23.997527608Z"
     description: 'Universal Helm chart for stateless Kubernetes workloads. Renders
       one or more containers with optional feature blocks for routing (k8s Ingress,
@@ -214,4 +248,4 @@ entries:
     urls:
     - https://nailabx.github.io/naix-charts/stateless-0.1.0.tgz
     version: 0.1.0
-generated: "2026-04-30T20:59:23.997568755Z"
+generated: "2026-04-30T21:03:41.074981105Z"
