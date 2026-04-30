@@ -14,7 +14,7 @@ description: |
 type: application
 
 # Chart version. Bump on every change. Major bump on breaking values changes.
-version: 1.0.1
+version: 1.1.0
 
 # AppVersion is overridable per-release via image.tag — leaving as a sane
 # baseline for charts deployed without an explicit tag.
