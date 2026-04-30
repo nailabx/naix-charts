@@ -153,6 +153,10 @@ gatewayApi:
 #     instead of inlining
 apisixRoute:
   enabled: false
+  # IngressClass to claim the route. Required for apisix-ingress-controller v2
+  # to actually reconcile the resource into APIsix etcd. Defaults to "apisix"
+  # which matches the chart deployed by the standard apisix Helm release.
+  ingressClassName: apisix
   http: []
   # Example:
   # http:

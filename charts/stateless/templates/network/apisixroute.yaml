@@ -26,6 +26,9 @@ metadata:
   labels:
     {{- include "stateless.labels" . | nindent 4 }}
 spec:
+  {{- with .Values.apisixRoute.ingressClassName }}
+  ingressClassName: {{ . }}
+  {{- end }}
   http:
     {{- range $rule := .Values.apisixRoute.http }}
     - name: {{ $rule.name }}
