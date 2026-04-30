@@ -130,58 +130,6 @@ gatewayApi:
     enabled: false
     from: []                 # [{group, kind, namespace}]
 
-# Option B-prime: APIsix-native ApisixRoute. Use this INSTEAD of
-# gatewayApi when the service needs WebSocket support — apisix-ingress-
-# controller v2's HTTPRoute conversion never sets enable_websocket, so
-# WS upgrades fail with 426 Upgrade Required from the upstream when
-# routed through HTTPRoute.
-#
-# Don't enable both gatewayApi AND apisixRoute for the same paths;
-# APIsix doesn't deduplicate, and you'll get unpredictable winners.
-#
-# http: list of rules. Each rule supports:
-#   name (required, unique within this resource)
-#   priority (optional — higher wins when paths overlap)
-#   match: { hosts, paths, methods, exprs }
-#   websocket: bool (per-rule)
-#   timeout: { connect, send, read } in seconds-suffix strings (e.g. "60s")
-#   backends: list of {serviceName, servicePort, weight, subset}
-#     serviceName defaults to the chart's fullname when omitted
-#   plugins: inline plugin chain
-#     [{ name: "...", enable: true, config: {...} }, ...]
-#   plugin_config_name: reference an ApisixPluginConfig (v2) by name
-#     instead of inlining
-apisixRoute:
-  enabled: false
-  # IngressClass to claim the route. Required for apisix-ingress-controller v2
-  # to actually reconcile the resource into APIsix etcd. Defaults to "apisix"
-  # which matches the chart deployed by the standard apisix Helm release.
-  ingressClassName: apisix
-  http: []
-  # Example:
-  # http:
-  #   - name: rest
-  #     match:
-  #       hosts: [app.example.com]
-  #       paths: ["/api/v1/*"]
-  #     backends:
-  #       - servicePort: 80
-  #     plugins:
-  #       - name: cors
-  #         enable: true
-  #         config: { allow_origins: "https://app.example.com" }
-  #   - name: stream
-  #     match:
-  #       hosts: [app.example.com]
-  #       paths: ["/api/v1/stream"]
-  #     websocket: true
-  #     backends:
-  #       - servicePort: 80
-  #     plugins:
-  #       - name: openid-connect
-  #         enable: true
-  #         config: { ... }
-
 # Option C: APIsix-specific per-route plugins (apisix.apache.org/v1alpha1 PluginConfig)
 # Only meaningful when your Gateway API implementation IS APIsix.
 apisix:
