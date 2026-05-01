@@ -147,6 +147,14 @@ Migrate by moving image/resources/probes under `containers.app.*` and
 swapping `autoscaling` → `hpa`. The chart itself doesn't error on the
 old keys — they're just silently ignored. A future v2.x will fail fast.
 
+## Changelog
+
+See [CHANGELOG.md](./CHANGELOG.md) for version history. Notable: skip
+`1.1.0` and `1.1.1` — they shipped an `apisixroute.yaml` template that
+was reverted in `1.1.2` (architectural mismatch + `apisix-ingress-
+controller` v2.0.1 reconciler no-op). `1.1.2` is byte-for-byte
+equivalent to `1.0.1` except the version line.
+
 ## License
 
 MIT.
